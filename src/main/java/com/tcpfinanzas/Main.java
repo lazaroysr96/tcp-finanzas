@@ -1,11 +1,17 @@
 package com.tcpfinanzas;
 
 import com.tcpfinanzas.data.LedgerRepository;
+import com.tcpfinanzas.data.NomenclatorRepository;
+import com.tcpfinanzas.model.AccountingItem;
+import com.tcpfinanzas.model.CnaeItem;
 import com.tcpfinanzas.model.DayEntry;
 import com.tcpfinanzas.model.GeneralesData;
 import com.tcpfinanzas.model.LedgerConstants;
+import com.tcpfinanzas.model.NomenclatorType;
 import com.tcpfinanzas.model.Registro;
 import com.tcpfinanzas.model.TributoRow;
+
+import java.util.List;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -458,7 +464,18 @@ public class Main extends Application {
         return card;
     }
 
+    private NomenclatorRepository nomenclatorRepo;
+    private NomenclatorType currentNomenclatorType = NomenclatorType.CNAE;
+    private String selectedCategory = "";
+    private String selectedSubcategory = "";
+    private ToggleButton cnaeBtn;
+    private ToggleButton contabBtn;
+    private TextField searchField;
+    private VBox resultsBox;
+
     private void showNomenclador() {
+        nomenclatorRepo = NomenclatorRepository.getInstance();
+
         Label title = new Label("Nomenclador");
         title.setFont(new Font(24));
         contentPane.getChildren().add(title);
@@ -469,17 +486,24 @@ public class Main extends Application {
         HBox searchRow = new HBox();
         searchRow.setSpacing(10);
 
-        TextField searchField = new TextField();
+        searchField = new TextField();
         searchField.setPromptText("Buscar por código, descripción o estructura");
         searchField.setPrefWidth(300);
 
+        searchField.setOnAction(e -> performSearch());
+
         Button buscarBtn = new Button("Buscar");
-        buscarBtn.setOnAction(e -> {
-            showAlert("Buscar", "Funcionalidad de búsqueda en desarrollo.\nBuscar: " + searchField.getText());
-        });
+        buscarBtn.setStyle("-fx-background-color: #1976d2; -fx-text-fill: white;");
+        buscarBtn.setOnAction(e -> performSearch());
 
         Button limpiarBtn = new Button("Limpiar");
-        limpiarBtn.setOnAction(e -> searchField.setText(""));
+        limpiarBtn.setOnAction(e -> {
+            searchField.setText("");
+            selectedCategory = "";
+            selectedSubcategory = "";
+            resultsBox.getChildren().clear();
+            resultsBox.getChildren().add(new Label("Escriba un término de búsqueda y presione Enter o Buscar"));
+        });
 
         searchRow.getChildren().addAll(searchField, buscarBtn, limpiarBtn);
         contentPane.getChildren().add(searchRow);
@@ -487,12 +511,113 @@ public class Main extends Application {
         HBox filterRow = new HBox();
         filterRow.setSpacing(10);
 
-        ToggleButton cnaeBtn = new ToggleButton("CNAE");
-        ToggleButton contabBtn = new ToggleButton("Contabilidad");
+        cnaeBtn = new ToggleButton("CNAE");
         cnaeBtn.setSelected(true);
+        cnaeBtn.setOnAction(e -> {
+            currentNomenclatorType = NomenclatorType.CNAE;
+            contabBtn.setSelected(false);
+            performSearch();
+        });
+
+        contabBtn = new ToggleButton("Contabilidad");
+        contabBtn.setOnAction(e -> {
+            currentNomenclatorType = NomenclatorType.ACCOUNTING;
+            cnaeBtn.setSelected(false);
+            performSearch();
+        });
 
         filterRow.getChildren().addAll(cnaeBtn, contabBtn);
         contentPane.getChildren().add(filterRow);
+
+        resultsBox = new VBox();
+        resultsBox.setSpacing(8);
+        resultsBox.setPadding(new Insets(10));
+        resultsBox.setStyle("-fx-background-color: white; -fx-border-color: #ccc;");
+
+        Label placeholder = new Label("Escriba un término de búsqueda y presione Enter o Buscar");
+        placeholder.setStyle("-fx-text-fill: #888;");
+        resultsBox.getChildren().add(placeholder);
+
+        ScrollPane resultsScroll = new ScrollPane(resultsBox);
+        resultsScroll.setFitToWidth(true);
+        resultsScroll.setPrefHeight(400);
+        contentPane.getChildren().add(resultsScroll);
+    }
+
+    private void performSearch() {
+        String term = searchField.getText() != null ? searchField.getText().trim() : "";
+
+        if (term.isEmpty() && currentNomenclatorType == NomenclatorType.ACCOUNTING) {
+            term = "";
+        }
+
+        resultsBox.getChildren().clear();
+
+        if (currentNomenclatorType == NomenclatorType.CNAE) {
+            List<CnaeItem> results = nomenclatorRepo.searchCnae(term);
+            if (results.isEmpty()) {
+                resultsBox.getChildren().add(new Label("No se encontraron resultados de CNAE."));
+            } else {
+                Label countLabel = new Label("Se encontraron " + results.size() + " resultados");
+                countLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #1976d2;");
+                resultsBox.getChildren().add(countLabel);
+
+                for (CnaeItem item : results) {
+                    VBox card = new VBox();
+                    card.setSpacing(4);
+                    card.setPadding(new Insets(8));
+                    card.setStyle("-fx-background-color: #f5f5f5; -fx-border-color: #ddd;");
+
+                    Label codeLabel = new Label(item.code + " - " + item.description);
+                    codeLabel.setStyle("-fx-font-weight: bold;");
+
+                    Label detailLabel = new Label(item.section + " • " + item.structure + " • Sección " + item.section);
+                    detailLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
+
+                    card.getChildren().addAll(codeLabel, detailLabel);
+                    resultsBox.getChildren().add(card);
+                }
+            }
+        } else {
+            List<AccountingItem> results = nomenclatorRepo.searchAccounting(
+                term, selectedCategory.isEmpty() ? null : selectedCategory,
+                selectedSubcategory.isEmpty() ? null : selectedSubcategory
+            );
+
+            if (results.isEmpty()) {
+                resultsBox.getChildren().add(new Label("No se encontraron resultados contables."));
+            } else {
+                Label countLabel = new Label("Se encontraron " + results.size() + " resultados");
+                countLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #1976d2;");
+                resultsBox.getChildren().add(countLabel);
+
+                for (AccountingItem item : results) {
+                    VBox card = new VBox();
+                    card.setSpacing(4);
+                    card.setPadding(new Insets(8));
+                    card.setStyle("-fx-background-color: #f5f5f5; -fx-border-color: #ddd;");
+
+                    Label nameLabel = new Label(item.displayName);
+                    nameLabel.setStyle("-fx-font-weight: bold;");
+
+                    Label codeLabel = new Label(item.displayCode + " • " + item.displayNature);
+                    codeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #1976d2;");
+
+                    Label catLabel = new Label("Categoría: " + item.categoryCode + " - " + item.categoryName);
+                    catLabel.setStyle("-fx-font-size: 11px;");
+
+                    if (item.subcategoryCode != null && !item.subcategoryCode.isEmpty()) {
+                        Label subLabel = new Label("Subcategoría: " + item.subcategoryCode + " - " + item.subcategoryName);
+                        subLabel.setStyle("-fx-font-size: 11px;");
+                        card.getChildren().addAll(nameLabel, codeLabel, catLabel, subLabel);
+                    } else {
+                        card.getChildren().addAll(nameLabel, codeLabel, catLabel);
+                    }
+
+                    resultsBox.getChildren().add(card);
+                }
+            }
+        }
     }
 
     private void showImpuestos(Registro registro) {
