@@ -81,7 +81,7 @@ public class NomenclatorRepository {
                 "WHERE code LIKE '%" + term + "%' " +
                 "OR description LIKE '%" + term.toUpperCase() + "%' " +
                 "OR section LIKE '%" + term.toUpperCase() + "%' " +
-                "OR structure LIKE '%" + term.toUpperCase() + "%' " +
+                "OR extructure LIKE '%" + term.toUpperCase() + "%' " +
                 "ORDER BY code LIMIT 100";
 
             ResultSet rs = stmt.executeQuery(query);
