@@ -21,8 +21,12 @@ jobs:
       
       - name: Download JavaFX SDK
         run: |
-          Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/org/openjfx/javafx/17.0.2/javafx-17.0.2-sdk.zip" -OutFile javafx.zip -UseBasicParsing
-          Expand-Archive javafx.zip -DestinationPath . -Force
+          # Descargar javafx controls, graphics, base para Windows
+          Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/org/openjfx/javafx-controls/17.0.2/javafx-controls-17.0.2-win.jar" -OutFile javafx-controls.jar -UseBasicParsing
+          Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/org/openjfx/javafx-graphics/17.0.2/javafx-graphics-17.0.2-win.jar" -OutFile javafx-graphics.jar -UseBasicParsing
+          Invoke-WebRequest -Uri "https://repo1.maven.org/maven2/org/openjfx/javafx-base/17.0.2/javafx-base-17.0.2-win.jar" -OutFile javafx-base.jar -UseBasicParsing
+          mkdir javafx-lib
+          Move-Item -Path "*.jar" -Destination javafx-lib
       
       - name: Build JAR
         env:
