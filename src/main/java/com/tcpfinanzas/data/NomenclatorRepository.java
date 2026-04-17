@@ -106,9 +106,13 @@ public class NomenclatorRepository {
 
         try (Statement stmt = connection.createStatement()) {
             StringBuilder query = new StringBuilder(
-                "SELECT item_type, category_code, category_name, subcategory_code, subcategory_name, " +
-                "account_code, account_name, account_nature, subaccount_code, subaccount_name, subaccount_nature, " +
-                "display_code, display_name, display_nature FROM accounting_items WHERE 1=1 "
+                "SELECT ac.code as category_code, ac.name as category_name, " +
+                "asc_.code as subcategory_code, asc_.name as subcategory_name, " +
+                "aa.display_code, aa.name as account_name, aa.nature as account_nature " +
+                "FROM account_accounts aa " +
+                "JOIN account_categories ac ON aa.category_id = ac.id " +
+                "LEFT JOIN account_subcategories asc_ ON aa.subcategory_id = asc_.id " +
+                "WHERE 1=1 "
             );
 
             if (term != null && !term.isEmpty()) {
@@ -130,20 +134,20 @@ public class NomenclatorRepository {
             ResultSet rs = stmt.executeQuery(query.toString());
             while (rs.next()) {
                 AccountingItem item = new AccountingItem();
-                item.itemType = rs.getString("item_type");
+                item.itemType = "Cuenta";
                 item.categoryCode = rs.getString("category_code");
                 item.categoryName = rs.getString("category_name");
-                item.subcategoryCode = rs.getString("subcategory_code");
-                item.subcategoryName = rs.getString("subcategory_name");
-                item.accountCode = rs.getString("account_code");
+                item.subcategoryCode = rs.getString("subcategory_code") != null ? rs.getString("subcategory_code") : "";
+                item.subcategoryName = rs.getString("subcategory_name") != null ? rs.getString("subcategory_name") : "";
+                item.accountCode = rs.getString("display_code");
                 item.accountName = rs.getString("account_name");
                 item.accountNature = rs.getString("account_nature");
-                item.subaccountCode = rs.getString("subaccount_code");
-                item.subaccountName = rs.getString("subaccount_name");
-                item.subaccountNature = rs.getString("subaccount_nature");
+                item.subaccountCode = "";
+                item.subaccountName = "";
+                item.subaccountNature = "";
                 item.displayCode = rs.getString("display_code");
-                item.displayName = rs.getString("display_name");
-                item.displayNature = rs.getString("display_nature");
+                item.displayName = rs.getString("account_name");
+                item.displayNature = rs.getString("account_nature");
                 results.add(item);
             }
             rs.close();
@@ -179,9 +183,10 @@ public class NomenclatorRepository {
         if (connection == null) return results;
 
         try (Statement stmt = connection.createStatement()) {
-            String query = "SELECT code, name FROM account_subcategories";
+            String query = "SELECT asc_.code, asc_.name FROM account_subcategories asc_ " +
+                "JOIN account_categories ac ON asc_.category_id = ac.id";
             if (categoryCode != null && !categoryCode.isEmpty()) {
-                query += " WHERE category_code = '" + categoryCode + "'";
+                query += " WHERE ac.code = '" + categoryCode + "'";
             }
             query += " ORDER BY sort_order";
 
