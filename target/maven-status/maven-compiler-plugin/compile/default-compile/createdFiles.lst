@@ -1,8 +1,11 @@
 com/tcpfinanzas/model/Registro.class
+com/tcpfinanzas/model/NomenclatorType.class
+com/tcpfinanzas/model/AccountingItem.class
 com/tcpfinanzas/model/LedgerConstants.class
+com/tcpfinanzas/Main$NavMenu.class
 com/tcpfinanzas/model/TributoRow.class
 com/tcpfinanzas/model/GeneralesData.class
-com/tcpfinanzas/Main$Menu.class
+com/tcpfinanzas/model/CnaeItem.class
 com/tcpfinanzas/data/LedgerRepository.class
 com/tcpfinanzas/Main.class
 com/tcpfinanzas/model/DayEntry.class

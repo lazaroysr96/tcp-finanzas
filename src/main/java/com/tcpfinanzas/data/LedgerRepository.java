@@ -200,23 +200,23 @@ public class LedgerRepository {
         notifyListeners();
     }
 
-    public void addIngreso(String month, int dia, double importe) {
+    public void addIngreso(String month, int dia, double importe, String nota) {
         List<DayEntry> entries = registro.ingresos.get(month);
         if (entries == null) {
             entries = new ArrayList<>();
             registro.ingresos.put(month, entries);
         }
-        entries.add(new DayEntry(String.valueOf(dia), String.format("%.2f", importe)));
+        entries.add(new DayEntry(String.valueOf(dia), String.format("%.2f", importe), nota));
         notifyListeners();
     }
 
-    public void addGasto(String month, int dia, double importe) {
+    public void addGasto(String month, int dia, double importe, String nota) {
         List<DayEntry> entries = registro.gastos.get(month);
         if (entries == null) {
             entries = new ArrayList<>();
             registro.gastos.put(month, entries);
         }
-        entries.add(new DayEntry(String.valueOf(dia), String.format("%.2f", importe)));
+        entries.add(new DayEntry(String.valueOf(dia), String.format("%.2f", importe), nota));
         notifyListeners();
     }
 
@@ -236,20 +236,20 @@ public class LedgerRepository {
         }
     }
 
-    public void editIngreso(String month, int oldDia, int newDia, double importe) {
+    public void editIngreso(String month, int oldDia, int newDia, double importe, String nota) {
         List<DayEntry> entries = registro.ingresos.get(month);
         if (entries != null) {
             entries.removeIf(e -> e.dia.equals(String.valueOf(oldDia)));
-            entries.add(new DayEntry(String.valueOf(newDia), String.format("%.2f", importe)));
+            entries.add(new DayEntry(String.valueOf(newDia), String.format("%.2f", importe), nota));
             notifyListeners();
         }
     }
 
-    public void editGasto(String month, int oldDia, int newDia, double importe) {
+    public void editGasto(String month, int oldDia, int newDia, double importe, String nota) {
         List<DayEntry> entries = registro.gastos.get(month);
         if (entries != null) {
             entries.removeIf(e -> e.dia.equals(String.valueOf(oldDia)));
-            entries.add(new DayEntry(String.valueOf(newDia), String.format("%.2f", importe)));
+            entries.add(new DayEntry(String.valueOf(newDia), String.format("%.2f", importe), nota));
             notifyListeners();
         }
     }

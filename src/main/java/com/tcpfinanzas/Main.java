@@ -29,14 +29,14 @@ public class Main extends Application {
     private LedgerRepository repository;
     private BorderPane root;
     private VBox contentPane;
-    private Menu currentMenu = Menu.INGRESOS;
+    private NavMenu currentNavMenu = NavMenu.INGRESOS;
     private Set<String> expandedMonths = new HashSet<>();
     private Stage mainStage;
     private double xOffset = 0;
     private double yOffset = 0;
 
-    private enum Menu {
-        GENERALES, INGRESOS, GASTOS, IMPUESTOS
+    private enum NavMenu {
+        GENERALES, INGRESOS, GASTOS, IMPUESTOS, NOMENCLADOR
     }
 
     public static void main(String[] args) {
@@ -53,11 +53,17 @@ public class Main extends Application {
 
         root = new BorderPane();
 
-        HBox header = createHeader();
-        root.setTop(header);
+        MenuBar menuBar = createMenuBar();
+        HBox topBar = new HBox(menuBar);
+        topBar.setStyle("-fx-background-color: #e0e0e0;");
 
-        VBox menu = createMenu();
-        root.setLeft(menu);
+        HBox header = createHeader();
+        VBox menu = new VBox(topBar, header);
+
+        root.setTop(menu);
+
+        VBox navMenu = createMenu();
+        root.setLeft(navMenu);
 
         contentPane = new VBox();
         contentPane.setPadding(new Insets(16));
@@ -78,6 +84,46 @@ public class Main extends Application {
         primaryStage.show();
     }
 
+    private MenuBar createMenuBar() {
+        MenuBar menuBar = new MenuBar();
+
+        Menu menuArchivo = new Menu("Archivo");
+        MenuItem guardar = new MenuItem("Guardar");
+        guardar.setOnAction(e -> repository.saveToFile());
+        MenuItem exportarPdf = new MenuItem("Exportar PDF");
+        exportarPdf.setOnAction(e -> {
+            String filename = "declaracion_jurada_" + repository.getRegistro().generales.anio + ".pdf";
+            repository.exportToPdf(filename);
+            showAlert("PDF Generado", "El archivo se guardó como: " + filename);
+        });
+        MenuItem salir = new MenuItem("Salir");
+        salir.setOnAction(e -> mainStage.close());
+        menuArchivo.getItems().addAll(guardar, exportarPdf, new SeparatorMenuItem(), salir);
+
+        Menu menuModulos = new Menu("Módulos");
+        MenuItem declaraciones = new MenuItem("Declaración Jurada");
+        declaraciones.setOnAction(e -> {
+            currentNavMenu = NavMenu.INGRESOS;
+            expandedMonths = new HashSet<>();
+            refreshContent();
+        });
+        MenuItem nomenclador = new MenuItem("Nomenclador");
+        nomenclador.setOnAction(e -> {
+            currentNavMenu = NavMenu.NOMENCLADOR;
+            refreshContent();
+        });
+        menuModulos.getItems().addAll(declaraciones, nomenclador);
+
+        Menu menuAyuda = new Menu("Acerca de");
+        MenuItem acercaDe = new MenuItem("Acerca de");
+        acercaDe.setOnAction(e -> showAlert("Acerca de",
+            "TCP Finanzas - Declaración Jurada\n\nVersión 1.0\n\nAplicación para gestión de declaración jurada."));
+        menuAyuda.getItems().add(acercaDe);
+
+        menuBar.getMenus().addAll(menuArchivo, menuModulos, menuAyuda);
+        return menuBar;
+    }
+
     private HBox createHeader() {
         HBox header = new HBox();
         header.setPadding(new Insets(10));
@@ -85,7 +131,7 @@ public class Main extends Application {
         header.setStyle("-fx-background-color: #1976d2;");
         header.setPrefHeight(50);
 
-        Label title = new Label("TCP Finanzas - Declaración Jurada");
+        Label title = new Label("Declaración Jurada");
         title.setFont(new Font(18));
         title.setStyle("-fx-text-fill: white;");
 
@@ -127,15 +173,15 @@ public class Main extends Application {
             btn.setStyle("-fx-background-color: #1976d2; -fx-text-fill: white;");
             btn.setOnAction(e -> {
                 if (option.equals("Datos Generales")) {
-                    currentMenu = Menu.GENERALES;
+                    currentNavMenu = NavMenu.GENERALES;
                 } else if (option.equals("Ingresos")) {
-                    currentMenu = Menu.INGRESOS;
+                    currentNavMenu = NavMenu.INGRESOS;
                     expandedMonths = new HashSet<>();
                 } else if (option.equals("Gastos")) {
-                    currentMenu = Menu.GASTOS;
+                    currentNavMenu = NavMenu.GASTOS;
                     expandedMonths = new HashSet<>();
                 } else if (option.equals("Impuestos")) {
-                    currentMenu = Menu.IMPUESTOS;
+                    currentNavMenu = NavMenu.IMPUESTOS;
                 }
                 refreshContent();
             });
@@ -149,7 +195,7 @@ public class Main extends Application {
         contentPane.getChildren().clear();
         Registro registro = repository.getRegistro();
 
-        switch (currentMenu) {
+        switch (currentNavMenu) {
             case GENERALES:
                 showGenerales();
                 break;
@@ -161,6 +207,9 @@ public class Main extends Application {
                 break;
             case IMPUESTOS:
                 showImpuestos(registro);
+                break;
+            case NOMENCLADOR:
+                showNomenclador();
                 break;
         }
     }
@@ -343,6 +392,9 @@ public class Main extends Application {
                 Label importeLabel = new Label(entry.importe + " CUP");
                 importeLabel.setStyle("-fx-font-weight: bold;");
 
+                Label notaLabel = new Label(entry.nota != null && !entry.nota.isEmpty() ? entry.nota : "");
+                notaLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
+
                 Button editBtn = new Button("E");
                 editBtn.setPrefWidth(30);
                 editBtn.setOnAction(e -> showEntryDialog(month, entry, isIngreso));
@@ -357,7 +409,23 @@ public class Main extends Application {
                     }
                 });
 
-                entryRow.getChildren().addAll(diaLabel, importeLabel, editBtn, deleteBtn);
+                VBox entryBox = new VBox();
+                entryBox.setSpacing(2);
+
+                HBox row1 = new HBox();
+                row1.setSpacing(16);
+                row1.setAlignment(Pos.CENTER_LEFT);
+                row1.getChildren().addAll(diaLabel, importeLabel, editBtn, deleteBtn);
+
+                if (entry.nota != null && !entry.nota.isEmpty()) {
+                    Label notaLabelSmall = new Label("Nota: " + entry.nota);
+                    notaLabelSmall.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
+                    entryBox.getChildren().addAll(row1, notaLabelSmall);
+                } else {
+                    entryBox.getChildren().add(row1);
+                }
+
+                entriesBox.getChildren().add(entryBox);
                 entriesBox.getChildren().add(entryRow);
             }
         } else if (!hasEntries) {
@@ -388,6 +456,43 @@ public class Main extends Application {
         card.getChildren().addAll(header, entriesBox, actions);
 
         return card;
+    }
+
+    private void showNomenclador() {
+        Label title = new Label("Nomenclador");
+        title.setFont(new Font(24));
+        contentPane.getChildren().add(title);
+
+        Label info = new Label("Consultas de referencia para CNAE y nomenclador contable.");
+        contentPane.getChildren().add(info);
+
+        HBox searchRow = new HBox();
+        searchRow.setSpacing(10);
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Buscar por código, descripción o estructura");
+        searchField.setPrefWidth(300);
+
+        Button buscarBtn = new Button("Buscar");
+        buscarBtn.setOnAction(e -> {
+            showAlert("Buscar", "Funcionalidad de búsqueda en desarrollo.\nBuscar: " + searchField.getText());
+        });
+
+        Button limpiarBtn = new Button("Limpiar");
+        limpiarBtn.setOnAction(e -> searchField.setText(""));
+
+        searchRow.getChildren().addAll(searchField, buscarBtn, limpiarBtn);
+        contentPane.getChildren().add(searchRow);
+
+        HBox filterRow = new HBox();
+        filterRow.setSpacing(10);
+
+        ToggleButton cnaeBtn = new ToggleButton("CNAE");
+        ToggleButton contabBtn = new ToggleButton("Contabilidad");
+        cnaeBtn.setSelected(true);
+
+        filterRow.getChildren().addAll(cnaeBtn, contabBtn);
+        contentPane.getChildren().add(filterRow);
     }
 
     private void showImpuestos(Registro registro) {
@@ -524,23 +629,31 @@ public class Main extends Application {
         }
         importeField.setPromptText("Importe (CUP)");
 
+        TextField notaField = new TextField();
+        if (existingEntry != null && existingEntry.nota != null) {
+            notaField.setText(existingEntry.nota);
+        }
+        notaField.setPromptText("Nota (opcional)");
+
         Button saveBtn = new Button(existingEntry != null ? "Guardar" : "Agregar");
+        saveBtn.setStyle("-fx-background-color: #1976d2; -fx-text-fill: white; -fx-font-size: 14px; -fx-padding: 10 25;");
         saveBtn.setOnAction(e -> {
             try {
                 int dia = Integer.parseInt(diaField.getText());
                 double importe = Double.parseDouble(importeField.getText());
+                String nota = notaField.getText() != null ? notaField.getText().trim() : "";
                 if (dia >= 1 && dia <= 31 && importe > 0) {
                     if (isIngreso) {
                         if (existingEntry != null) {
-                            repository.editIngreso(month, Integer.parseInt(existingEntry.dia), dia, importe);
+                            repository.editIngreso(month, Integer.parseInt(existingEntry.dia), dia, importe, nota);
                         } else {
-                            repository.addIngreso(month, dia, importe);
+                            repository.addIngreso(month, dia, importe, nota);
                         }
                     } else {
                         if (existingEntry != null) {
-                            repository.editGasto(month, Integer.parseInt(existingEntry.dia), dia, importe);
+                            repository.editGasto(month, Integer.parseInt(existingEntry.dia), dia, importe, nota);
                         } else {
-                            repository.addGasto(month, dia, importe);
+                            repository.addGasto(month, dia, importe, nota);
                         }
                     }
                     dialog.close();
@@ -551,6 +664,7 @@ public class Main extends Application {
         });
 
         Button cancelBtn = new Button("Cancelar");
+        cancelBtn.setStyle("-fx-font-size: 14px; -fx-padding: 8 20;");
         cancelBtn.setOnAction(e -> dialog.close());
 
         HBox buttons = new HBox();
@@ -561,10 +675,11 @@ public class Main extends Application {
             new Label("Mes:"), monthCombo,
             new Label("Día:"), diaField,
             new Label("Importe (CUP):"), importeField,
+            new Label("Nota (opcional):"), notaField,
             buttons
         );
 
-        Scene scene = new Scene(content, 300, 220);
+        Scene scene = new Scene(content, 350, 280);
         dialog.setScene(scene);
         dialog.showAndWait();
     }

@@ -1,7 +1,10 @@
 /home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/Main.java
 /home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/data/LedgerRepository.java
+/home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/model/AccountingItem.java
+/home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/model/CnaeItem.java
 /home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/model/DayEntry.java
 /home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/model/GeneralesData.java
 /home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/model/LedgerConstants.java
+/home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/model/NomenclatorType.java
 /home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/model/Registro.java
 /home/yunior/Documentos/GitHub/tcp-finanzas/src/main/java/com/tcpfinanzas/model/TributoRow.java
