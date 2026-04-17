@@ -35,7 +35,7 @@ jobs:
       
       - name: Create Windows executable
         run: |
-          $javafxLib = Get-ChildItem -Path "openjfx-sdk-17.0.2\lib" -Filter "*.jar" | Select-Object -ExpandProperty FullName -Join ";"
+          $javafxLib = (Get-ChildItem -Path "javafx-lib" -Filter "*.jar" | ForEach-Object { $_.FullName }) -join ";"
           jpackage --input target --main-jar tcp-finanzas-1.0.jar --main-class com.tcpfinanzas.Main --name TCPFinanzas --type exe --java-options "--module-path $javafxLib"
       
       - name: Upload artifact
