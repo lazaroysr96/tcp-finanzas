@@ -77,7 +77,7 @@ public class NomenclatorRepository {
         if (connection == null || term == null) return results;
 
         try (Statement stmt = connection.createStatement()) {
-            String query = "SELECT section, structure, code, description FROM cnae " +
+            String query = "SELECT section, extructure, code, description FROM cnae " +
                 "WHERE code LIKE '%" + term + "%' " +
                 "OR description LIKE '%" + term.toUpperCase() + "%' " +
                 "OR section LIKE '%" + term.toUpperCase() + "%' " +
@@ -88,7 +88,7 @@ public class NomenclatorRepository {
             while (rs.next()) {
                 CnaeItem item = new CnaeItem();
                 item.section = rs.getString("section");
-                item.structure = rs.getString("structure");
+                item.structure = rs.getString("extructure");
                 item.code = rs.getString("code");
                 item.description = rs.getString("description");
                 results.add(item);
