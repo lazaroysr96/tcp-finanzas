@@ -256,12 +256,46 @@ Verificar que no haya múltiples instancias ejecutándose.
 
 ---
 
+## Compilar para distribución
+
+### Windows (.exe)
+
+1. Instalar JDK 17 y JavaFX SDK en el servidor de build
+2. Compilar:
+   ```bash
+   mvn clean package
+   ```
+
+3. Crear ejecutable (bundlea JDK + JavaFX):
+   ```bash
+   jpackage --input target --main-jar tcp-finanzas-1.0.jar ^
+         --main-class com.tcpfinanzas.Main ^
+         --name TCPFinanzas ^
+         --type exe ^
+         --icon src/main/resources/icon.ico
+   ```
+
+   Esto genera un `.exe` instalable que incluye todo.
+
+### Linux (.AppImage)
+
+En Linux con Display:
+```bash
+jpackage --input target --main-jar tcp-finanzas-1.0.jar ^
+         --main-class com.tcpfinanzas.Main ^
+         --name TCPFinanzas ^
+         --type app-image
+```
+
+---
+
 ## Technologies Usadas
 
 - **Java 17**
 - **JavaFX 17** (UI)
 - **Maven** (build)
-- **Gson** (opcional, para JSON)
+- **Gson** (JSON)
+- **SQLite** (Nomenclador)
 
 ---
 
